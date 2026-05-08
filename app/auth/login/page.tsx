@@ -30,10 +30,28 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema as any),
     defaultValues: {
       email: "",
-
       password: "",
     },
   });
+
+  const onSubmit = (data: any) => {
+    startTransition(async () => {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        router.push("/");
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    });
+  };
 
   return (
     <Card>
@@ -42,7 +60,7 @@ export default function LoginPage() {
         <CardDescription>Login to get started right away</CardDescription>
       </CardHeader>
       <CardContent>
-        <form>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup className="gap-y-4">
             <Controller
               name="email"
@@ -82,7 +100,7 @@ export default function LoginPage() {
               )}
             />
 
-            <Button disabled={isPending}>
+            <Button type="submit" disabled={isPending}>
               {isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />

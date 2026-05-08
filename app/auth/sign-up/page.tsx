@@ -33,6 +33,21 @@ export default function SignUpPage() {
       password: "",
     },
   });
+
+  const onSubmit = (data: any) => {
+    startTransition(async () => {
+      await fetch("/api/sign-up", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      router.push("/auth/login");
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -40,7 +55,7 @@ export default function SignUpPage() {
         <CardDescription>Create an account to get started</CardDescription>
       </CardHeader>
       <CardContent>
-        <form>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup className="gap-y-4">
             <Controller
               name="name"
@@ -97,7 +112,7 @@ export default function SignUpPage() {
               )}
             />
 
-            <Button disabled={isPending}>
+            <Button type="submit" disabled={isPending}>
               {isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />

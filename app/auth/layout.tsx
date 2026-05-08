@@ -2,6 +2,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ReactNode } from "react";
+import { ModeToggle } from '@/components/web/theme-toggle';
+
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,7 +14,16 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           Go Back
         </Link>
       </div>
-
+      <div className="absolute top-5 right-5 flex items-center gap-2">
+        <Link className={buttonVariants({ variant: 'default' })} href="/auth/sign-up">
+          Sign up
+        </Link>
+        <Link className={buttonVariants({ variant: 'outline' })} href="/auth/login">
+          Login
+        </Link>
+        <ModeToggle />
+      </div>
+      
       <div className="w-full max-w-md mx-auto">{children}</div>
     </div>
   );
