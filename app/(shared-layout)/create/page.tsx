@@ -15,34 +15,56 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { createPost } from "@/actions/post";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import { createPostSchema } from "@/app/schemas/post";
 import { Loader2 } from "lucide-react";
 
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function CreateRoute() {
   const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
   const form = useForm({
-    // resolver: zodResolver(postSchema),
+    resolver: zodResolver(createPostSchema),
     defaultValues: {
-      content: "",
+      body: "",
       title: "",
-      image: undefined,
     },
   });
-/** 
 
-  function onSubmit(values: z.infer<typeof postSchema>) {
+  function onSubmit(values: z.infer<typeof createPostSchema>) {
     startTransition(async () => {
-      console.log("hey this runs on the client side");
+      try {
+        await createPost({
+          title: values.title,
+          body: values.body,
+        });
 
-      await createBlogAction(values);
+        setMessage({ text: "Create success! Redirecting to blog...", type: "success" });
+        form.reset();
+        setTimeout(() => router.push("/blog"), 500);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Create failed";
+        setMessage({ text: errorMessage, type: "error" });
+      }
     });
   }
-**/
+
   return (
     <div className="py-12">
       <div className="text-center mb-12">
@@ -60,10 +82,26 @@ export default function CreateRoute() {
           <CardDescription>Create a new blog article</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
-            <FieldGroup className="gap-y-4">
+          <div className="relative">
+            {message ? (
+              <div
+                className={`pointer-events-none fixed right-4 top-4 z-50 w-full max-w-sm rounded-2xl border px-4 py-4 shadow-xl transition duration-300 ${
+                  message.type === "success"
+                    ? "border-green-400 bg-emerald-50 text-emerald-900"
+                    : "border-red-400 bg-rose-50 text-rose-900"
+                }`}
+                role="status"
+              >
+                <p className="font-semibold mb-1">
+                  {message.type === "success" ? "Success" : "Error"}
+                </p>
+                <p className="text-sm leading-6">{message.text}</p>
+              </div>
+            ) : null}
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <FieldGroup className="gap-y-4">
               <Controller
-              control={form.control}
+                control={form.control}
                 name="title"
                 render={({ field, fieldState }) => (
                   <Field>
@@ -81,7 +119,7 @@ export default function CreateRoute() {
               />
 
               <Controller
-                name="content"
+                name="body"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field>
@@ -98,30 +136,7 @@ export default function CreateRoute() {
                 )}
               />
 
-              <Controller
-                name="image"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field>
-                    <FieldLabel>Image</FieldLabel>
-                    <Input
-                      aria-invalid={fieldState.invalid}
-                      placeholder="Super cool blog content"
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        field.onChange(file);
-                      }}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-
-              <Button disabled={isPending}>
+              <Button type="submit" disabled={isPending}>
                 {isPending ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
@@ -133,6 +148,7 @@ export default function CreateRoute() {
               </Button>
             </FieldGroup>
           </form>
+        </div>
         </CardContent>
       </Card>
     </div>
