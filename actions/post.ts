@@ -1,15 +1,15 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { createPostSchema } from "@/app/schemas/post";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+import { createId } from "@paralleldrive/cuid2";
 
-export async function createPost(data: {
-  title: string;
-  body: string;
-}) {
+export async function createPost(formData: FormData) {
   const cookieStore = await cookies();
+
   const token = cookieStore.get("token")?.value;
   const userId = verifyToken(token);
 
@@ -17,10 +17,29 @@ export async function createPost(data: {
     throw new Error("Not authenticated");
   }
 
+  const title = formData.get("title") as string;
+  const body = formData.get("body") as string;
+  const image = formData.get("image") as File | null;
+  let imageUrl: string | undefined = undefined;
+
+  if (image && image.size > 0) {
+    const bytes = await image.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const ext = image.name.split(".").pop() || "bin";
+    const filename = `${createId()}.${ext}`;
+    const uploadsDir = path.join(process.cwd(), "public/uploads");
+    await mkdir(uploadsDir, { recursive: true });
+    const filepath = path.join(uploadsDir, filename);
+    await writeFile(filepath, buffer);
+
+    imageUrl = `/uploads/${filename}`;
+  }
+
   const post = await prisma.post.create({
     data: {
-      title: data.title,
-      body: data.body,
+      title,
+      body,
+      imageUrl,
       authorId: userId,
     },
   });
@@ -64,6 +83,13 @@ export async function getPostById(postId: string) {
     where: {
       id: postId,
     },
+    include: {
+      comments: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
   });
 }
 
@@ -86,4 +112,50 @@ export async function searchPosts(term: string) {
       ],
     },
   });
+}
+
+export async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  const userId = verifyToken(token);
+
+  if (!userId) {
+    return null;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  });
+
+  return user;
+}
+
+export async function createComment(
+  postId: string,
+  authorName: string,
+  body: string
+) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  const userId = verifyToken(token);
+
+  if (!userId) {
+    throw new Error("Not authenticated");
+  }
+
+  const comment = await prisma.comment.create({
+    data: {
+      postId,
+      authorId: userId,
+      authorName,
+      body,
+    },
+  });
+
+  return comment;
 }

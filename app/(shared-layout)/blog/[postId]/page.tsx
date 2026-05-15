@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { getPostById } from "@/actions/post";
 import { Card, CardContent } from "@/components/ui/card";
+import { CommentSection } from "@/components/web/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -43,7 +45,9 @@ async function LoadBlogPost({ postId }: { postId: string }) {
     return (
       <article className="max-w-3xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-5xl font-bold tracking-tight mb-4">{post.title}</h1>
+          <h1 className="text-5xl font-bold tracking-tight mb-4">
+            {post.title}
+          </h1>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <time dateTime={post.createdAt?.toISOString()}>
               {post.createdAt?.toLocaleDateString("en-US", {
@@ -55,6 +59,16 @@ async function LoadBlogPost({ postId }: { postId: string }) {
           </div>
         </div>
 
+        {post.imageUrl ? (
+          <div className="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+            <img
+              src={post.imageUrl}
+              alt={post.title}
+              className="h-[420px] w-full object-cover"
+            />
+          </div>
+        ) : null}
+
         <Card>
           <CardContent className="prose prose-lg max-w-none pt-6">
             <p className="whitespace-pre-wrap leading-relaxed text-base">
@@ -63,19 +77,25 @@ async function LoadBlogPost({ postId }: { postId: string }) {
           </CardContent>
         </Card>
 
+        <Separator className="my-8" />
+        <CommentSection initialComments={post.comments || []} />
+
         <div className="mt-8">
-          <Link href="/blog" className={buttonVariants({ variant: "outline" })}>
+          <Link href="/blog" className={buttonVariants()}>
             ← Back to Blog
           </Link>
         </div>
       </article>
+      
     );
   } catch (error) {
     return (
       <div className="max-w-3xl mx-auto">
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
-            <p className="text-red-900 mb-4">Failed to load post. Please try again.</p>
+            <p className="text-red-900 mb-4">
+              Failed to load post. Please try again.
+            </p>
             <Link href="/blog" className={buttonVariants()}>
               Back to Blog
             </Link>
@@ -101,4 +121,3 @@ function SkeletonLoadingUi() {
     </div>
   );
 }
-

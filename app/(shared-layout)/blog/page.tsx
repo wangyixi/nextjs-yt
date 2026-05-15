@@ -86,8 +86,6 @@ async function LoadBlogList() {
   }
 }
 
-
-
 function SkeletonLoadingUi() {
   return (
     <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">

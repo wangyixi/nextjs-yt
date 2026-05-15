@@ -25,6 +25,7 @@ model Post {
   title          String
   body           String
   authorId       String
+  imageUrl       String?
   comments       Comment[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

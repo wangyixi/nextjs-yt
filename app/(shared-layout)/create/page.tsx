@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { createPost } from "@/actions/post";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createPostSchema } from "@/app/schemas/post";
 import { Loader2 } from "lucide-react";
@@ -24,6 +23,10 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import z from "zod";
+
+type CreatePostFormValues = z.infer<typeof createPostSchema> & {
+  image?: FileList;
+};
 
 export default function CreateRoute() {
   const [isPending, startTransition] = useTransition();
@@ -39,21 +42,34 @@ export default function CreateRoute() {
     return () => window.clearTimeout(timer);
   }, [message]);
 
-  const form = useForm({
+  const form = useForm<CreatePostFormValues>({
     resolver: zodResolver(createPostSchema),
     defaultValues: {
       body: "",
       title: "",
+      image: undefined,
     },
   });
 
-  function onSubmit(values: z.infer<typeof createPostSchema>) {
+  function onSubmit(values: CreatePostFormValues) {
     startTransition(async () => {
       try {
-        await createPost({
-          title: values.title,
-          body: values.body,
+        const formData = new FormData();
+        formData.append("title", values.title);
+        formData.append("body", values.body);
+        if (values.image && values.image.length > 0) {
+          formData.append("image", values.image[0]);
+        }
+
+        const res = await fetch("/api/post", {
+          method: "POST",
+          body: formData,
         });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Upload failed");
+        }
 
         setMessage({ text: "Create success! Redirecting to blog...", type: "success" });
         form.reset();
@@ -132,6 +148,21 @@ export default function CreateRoute() {
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
+                  </Field>
+                )}
+              />
+
+              <Controller
+                name="image"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Upload image</FieldLabel>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => field.onChange(event.target.files)}
+                    />
                   </Field>
                 )}
               />
