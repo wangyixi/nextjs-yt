@@ -5,6 +5,7 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/app
+      JWT_SECRET: super_secret_key_123456
     depends_on:
       - db
 
@@ -17,3 +18,8 @@ services:
       POSTGRES_DB: app
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

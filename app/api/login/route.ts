@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
-
-const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
@@ -53,6 +51,7 @@ export async function POST(req: Request) {
 
     return response;
   } catch (error) {
+    console.error("LOGIN ERROR:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
